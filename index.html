@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Expense Tracker</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: white; }
+        .hidden { display: none; }
+        
         .login-screen { min-height: 100vh; background: white; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
         .login-box h1 { font-size: 32px; font-weight: bold; color: #f97316; margin-bottom: 4px; }
@@ -23,13 +22,8 @@
         .home-screen { background: white; min-height: 100vh; }
         .header { background: linear-gradient(135deg, #f97316, #fbbf24); color: white; padding: 20px; text-align: center; }
         .header h1 { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
-        .header p { font-size: 12px; opacity: 0.9; }
         
         .content { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .summary-box { background: #f0fdf4; border: 1px solid #86efac; padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        .summary-box p { font-size: 12px; color: #666; margin-bottom: 4px; }
-        .summary-box h2 { font-size: 28px; font-weight: bold; color: #22c55e; }
-        
         .menu-btn { width: 100%; padding: 14px; margin-bottom: 8px; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
         .btn-add { background: linear-gradient(135deg, #22c55e, #10b981); }
         .btn-view { background: linear-gradient(135deg, #3b82f6, #0ea5e9); }
@@ -44,30 +38,246 @@
         .input-group label { font-size: 11px; font-weight: 600; color: #333; display: block; margin-bottom: 4px; }
         .input-group input, .input-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .total-display { background: #eff6ff; border: 1px solid #93c5fd; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center; }
-        .total-display p { font-size: 11px; color: #666; }
-        .total-display h3 { font-size: 18px; font-weight: bold; color: #1e40af; }
         .running-total { background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; margin-bottom: 16px; text-align: center; }
-        .running-total p { font-size: 12px; color: #666; margin-bottom: 4px; }
         .running-total h2 { font-size: 24px; font-weight: bold; color: #22c55e; }
         .btn-save { width: 100%; padding: 12px; background: #22c55e; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 8px; }
         .btn-back { width: 100%; padding: 12px; background: #6b7280; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
         .btn-add-row { width: 100%; padding: 10px; background: #fef3c7; color: #92400e; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 12px; }
         .btn-delete { background: #ef4444; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
-        .error-box { background: #fee2e2; border: 1px solid #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 16px; color: #dc2626; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/d/AKfycbye7Vc7cU0ImeSZJ1qvquAqVLbD6x8CbzYUeF6XAqAFhb39H2mj8n8WkoYEDcHA0H1g/exec';
-        
-        function App() {
-            const [currentUser, setCurrentUser] = React.useState(null);
-            const [screen, setScreen] = React.useState('login');
-            const [loading, setLoading] = React.useState(false);
-            const [rows, setRows] = React.useState([{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
-            const [runningTotal, setRunningTotal] = React.useState(0);
-            const [error, setError] = React.useState('');
+    <div id="login" class="login-screen">
+        <div class="login-box">
+            <h1>Project</h1>
+            <p>Expense Tracker</p>
+            <div class="form-group">
+                <label>Your Email</label>
+                <select id="emailSelect">
+                    <option value="">Select...</option>
+                    <option value="jdghevariya@gmail.com">Jagdish</option>
+                    <option value="31.shrikant@gmail.com">Shrikant</option>
+                    <option value="spprince34@gmail.com">Prince</option>
+                    <option value="rathodkishan30055@gmail.com">Kishan</option>
+                    <option value="sarvayogamgroup@gmail.com">Admin</option>
+                </select>
+            </div>
+            <button class="btn" id="loginBtn">Login</button>
+        </div>
+    </div>
 
-            const callAppScript = async (action, payload = {}) => {
+    <div id="home" class="home-screen hidden">
+        <div class="header">
+            <h1>Expense Tracker</h1>
+            <p id="userName"></p>
+        </div>
+        <div class="content">
+            <button class="menu-btn btn-add" onclick="showScreen('add')">➕ Add Expense</button>
+            <button class="menu-btn btn-view" onclick="showScreen('view')">👁️ View All</button>
+            <button class="menu-btn btn-dashboard" onclick="showScreen('dashboard')">📊 Dashboard</button>
+            <button class="menu-btn btn-export" onclick="showScreen('export')">⬇️ Export</button>
+            <button class="menu-btn btn-logout" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <div id="add" class="home-screen hidden">
+        <div class="header">
+            <h1>Add Expense</h1>
+        </div>
+        <div class="add-screen">
+            <div class="running-total">
+                <p>Running Total</p>
+                <h2 id="runningTotal">₹0</h2>
+            </div>
+            <div id="expenseRows"></div>
+            <button class="btn-add-row" onclick="addRow()">+ Add Row</button>
+            <button class="btn-save" onclick="saveExpenses()">✓ Save All</button>
+            <button class="btn-back" onclick="showScreen('home')">Back</button>
+        </div>
+    </div>
+
+    <div id="view" class="home-screen hidden">
+        <div class="header"><h1>View All</h1></div>
+        <div class="content" style="text-align: center; padding-top: 40px; color: #999;">Coming soon...</div>
+        <div class="content" style="padding-top: 20px;"><button class="btn-back" onclick="showScreen('home')">Back</button></div>
+    </div>
+
+    <div id="dashboard" class="home-screen hidden">
+        <div class="header"><h1>Dashboard</h1></div>
+        <div class="content" style="text-align: center; padding-top: 40px; color: #999;">Coming soon...</div>
+        <div class="content" style="padding-top: 20px;"><button class="btn-back" onclick="showScreen('home')">Back</button></div>
+    </div>
+
+    <div id="export" class="home-screen hidden">
+        <div class="header"><h1>Export</h1></div>
+        <div class="content" style="text-align: center; padding-top: 40px; color: #999;">Coming soon...</div>
+        <div class="content" style="padding-top: 20px;"><button class="btn-back" onclick="showScreen('home')">Back</button></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let expenses = [];
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/d/AKfycbye7Vc7cU0ImeSZJ1qvquAqVLbD6x8CbzYUeF6XAqAFhb39H2mj8n8WkoYEDcHA0H1g/exec';
+
+        function showScreen(screen) {
+            document.querySelectorAll('[id="login"], [id="home"], [id="add"], [id="view"], [id="dashboard"], [id="export"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(screen).classList.remove('hidden');
+        }
+
+        function logout() {
+            currentUser = null;
+            expenses = [];
+            showScreen('login');
+        }
+
+        document.getElementById('loginBtn').onclick = function() {
+            const email = document.getElementById('emailSelect').value;
+            if (!email) {
+                alert('Please select an email');
+                return;
+            }
+            currentUser = email;
+            document.getElementById('userName').textContent = email.split('@')[0];
+            renderExpenseRows();
+            showScreen('home');
+        };
+
+        function addRow() {
+            expenses.push({ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' });
+            renderExpenseRows();
+        }
+
+        function removeRow(idx) {
+            expenses.splice(idx, 1);
+            renderExpenseRows();
+        }
+
+        function updateRow(idx, field, value) {
+            expenses[idx][field] = value;
+            calculateTotal();
+            renderExpenseRows();
+        }
+
+        function renderExpenseRows() {
+            const container = document.getElementById('expenseRows');
+            container.innerHTML = '';
+            
+            expenses.forEach((row, idx) => {
+                const qty = parseFloat(row.quantity) || 0;
+                const rate = parseFloat(row.rate) || 0;
+                const gst = parseFloat(row.gstPercent) || 0;
+                const amount = qty * rate;
+                const gstAmount = (amount * gst) / 100;
+                const total = amount + gstAmount;
+
+                const html = `
+                    <div class="row-box">
+                        <div class="row-title">
+                            <span>Expense ${idx + 1}</span>
+                            ${expenses.length > 1 ? `<button class="btn-delete" onclick="removeRow(${idx})">Delete</button>` : ''}
+                        </div>
+                        <div class="input-group">
+                            <label>Project *</label>
+                            <input type="text" placeholder="e.g., Surat_Residential_001" value="${row.project}" onchange="updateRow(${idx}, 'project', this.value)" />
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Date *</label>
+                                <input type="date" value="${row.date}" onchange="updateRow(${idx}, 'date', this.value)" />
+                            </div>
+                            <div class="input-group">
+                                <label>Entity *</label>
+                                <select onchange="updateRow(${idx}, 'entityName', this.value)">
+                                    <option value="">Select</option>
+                                    <option ${row.entityName === 'Prince' ? 'selected' : ''}>Prince</option>
+                                    <option ${row.entityName === 'Kishan' ? 'selected' : ''}>Kishan</option>
+                                    <option ${row.entityName === 'Jagdish' ? 'selected' : ''}>Jagdish</option>
+                                    <option ${row.entityName === 'Shrikant' ? 'selected' : ''}>Shrikant</option>
+                                    <option ${row.entityName === 'SSPL' ? 'selected' : ''}>SSPL</option>
+                                    <option ${row.entityName === 'SRS' ? 'selected' : ''}>SRS</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Particular *</label>
+                            <input type="text" placeholder="Panel, Labor, etc" value="${row.particular}" onchange="updateRow(${idx}, 'particular', this.value)" />
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Unit</label>
+                                <input type="text" placeholder="units" value="${row.unit}" onchange="updateRow(${idx}, 'unit', this.value)" />
+                            </div>
+                            <div class="input-group">
+                                <label>Quantity</label>
+                                <input type="number" value="${row.quantity}" onchange="updateRow(${idx}, 'quantity', this.value)" />
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Rate (₹)</label>
+                            <input type="number" value="${row.rate}" onchange="updateRow(${idx}, 'rate', this.value)" />
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #93c5fd; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
+                            <p style="font-size: 11px; color: #666;">Amount</p>
+                            <h3 style="font-size: 18px; font-weight: bold; color: #1e40af;">₹${amount.toLocaleString('en-IN')}</h3>
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>GST %</label>
+                                <select onchange="updateRow(${idx}, 'gstPercent', this.value)">
+                                    <option ${row.gstPercent === 0 ? 'selected' : ''}>0</option>
+                                    <option ${row.gstPercent === 5 ? 'selected' : ''}>5</option>
+                                    <option ${row.gstPercent === 18 ? 'selected' : ''}>18</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Notes</label>
+                                <input type="text" placeholder="Optional" value="${row.notes}" onchange="updateRow(${idx}, 'notes', this.value)" />
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            expenses.forEach(row => {
+                const qty = parseFloat(row.quantity) || 0;
+                const rate = parseFloat(row.rate) || 0;
+                const gst = parseFloat(row.gstPercent) || 0;
+                const amount = qty * rate;
+                total += amount + (amount * gst / 100);
+            });
+            document.getElementById('runningTotal').textContent = '₹' + total.toLocaleString('en-IN', {maximumFractionDigits: 2});
+        }
+
+        function saveExpenses() {
+            const valid = expenses.filter(r => r.project && r.date && r.particular && r.entityName);
+            if (!valid.length) {
+                alert('Please fill: Project, Date, Particular, Entity');
+                return;
+            }
+            
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'addExpenses', userEmail: currentUser, expenses: valid })
+            }).then(r => r.json()).then(result => {
+                if (result.success) {
+                    alert('✓ Saved ' + result.reply.count + ' expense(s)!');
+                    expenses = [];
+                    renderExpenseRows();
+                    calculateTotal();
+                    showScreen('home');
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            }).catch(err => alert('Error: ' + err.message));
+        }
+
+        // Initialize
+        expenses = [{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }];
+        renderExpenseRows();
+    </script>
+</body>
+</html>
