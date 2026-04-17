@@ -23,7 +23,7 @@ export default function SolarExpenseTracker() {
   // Dashboard data
   const [dashboardData, setDashboardData] = useState(null);
 
-  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_DEPLOYMENT_URL_HERE'; // User will replace this
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/library/d/1lXEgZV92AcjpAjoQFZ4fXz4VEsEgPy1vX3S9ve6icGDFNaoE76z4GlVQ/1'; // User will replace this
   const COMMON_PARTICULARS = ['Panel', 'Inverter', 'Structure', 'Labor', 'Transport', 'Wiring', 'Installation', 'Misc'];
 
   // ============================================
