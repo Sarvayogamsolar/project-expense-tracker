@@ -9,48 +9,52 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #ffffff; }
-        .login-screen { min-height: 100vh; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); width: 100%; max-width: 400px; border: 2px solid #e5e7eb; }
-        .login-box h1 { font-size: 28px; margin-bottom: 8px; color: #f97316; font-weight: bold; }
-        .login-box p { font-size: 14px; color: #666; margin-bottom: 24px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { font-size: 12px; font-weight: bold; color: #1f2937; display: block; margin-bottom: 8px; }
-        .form-group select { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
-        .btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%); color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .home-screen { min-height: 100vh; background: #ffffff; }
-        .header { background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%); color: white; padding: 20px; }
-        .header h1 { font-size: 24px; margin-bottom: 4px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: white; }
+        .login-screen { min-height: 100vh; background: white; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
+        .login-box h1 { font-size: 32px; font-weight: bold; color: #f97316; margin-bottom: 4px; }
+        .login-box p { font-size: 14px; color: #888; margin-bottom: 30px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { font-size: 12px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
+        .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #f97316, #fbbf24); color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn:disabled { opacity: 0.6; }
+        
+        .home-screen { background: white; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #f97316, #fbbf24); color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
         .header p { font-size: 12px; opacity: 0.9; }
-        .content { padding: 20px; }
-        .summary { background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.15)); border: 2px solid #86efac; padding: 16px; border-radius: 12px; margin-bottom: 20px; }
-        .summary p { font-size: 12px; color: #666; margin-bottom: 4px; }
-        .summary h2 { font-size: 28px; font-weight: bold; color: #22c55e; }
-        .menu-btn { width: 100%; padding: 16px; margin-bottom: 12px; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-add { background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); }
-        .btn-view { background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%); }
-        .btn-dashboard { background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); }
-        .btn-export { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
-        .add-screen, .view-screen, .dashboard-screen { padding: 20px; }
-        .section-title { font-size: 14px; font-weight: bold; color: #374151; margin-bottom: 12px; margin-top: 20px; }
-        .quick-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
-        .quick-btn { background: #fed7aa; color: #92400e; padding: 8px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .row-container { background: white; padding: 16px; border-radius: 8px; border: 2px solid #e5e7eb; margin-bottom: 16px; }
-        .row-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: bold; }
+        
+        .content { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .summary-box { background: #f0fdf4; border: 1px solid #86efac; padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .summary-box p { font-size: 12px; color: #666; margin-bottom: 4px; }
+        .summary-box h2 { font-size: 28px; font-weight: bold; color: #22c55e; }
+        
+        .menu-btn { width: 100%; padding: 14px; margin-bottom: 8px; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn-add { background: linear-gradient(135deg, #22c55e, #10b981); }
+        .btn-view { background: linear-gradient(135deg, #3b82f6, #0ea5e9); }
+        .btn-dashboard { background: linear-gradient(135deg, #a855f7, #ec4899); }
+        .btn-export { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
+        .btn-logout { background: #ef4444; }
+        
+        .add-screen { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .row-box { background: white; padding: 16px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 16px; }
+        .row-title { font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; }
         .input-group { margin-bottom: 12px; }
-        .input-group label { font-size: 11px; font-weight: bold; color: #374151; display: block; margin-bottom: 4px; }
-        .input-group input, .input-group select { width: 100%; padding: 8px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 12px; }
-        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .total-box { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(6,182,212,0.15)); border: 2px solid #93c5fd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-        .total-box p { font-size: 11px; color: #666; }
-        .total-box h3 { font-size: 20px; font-weight: bold; color: #1e40af; }
-        .btn-save, .btn-delete { padding: 8px; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .btn-save { background: #22c55e; color: white; width: 100%; }
-        .btn-delete { background: #ef4444; color: white; }
-        .filter-box { background: white; padding: 16px; border-radius: 8px; border: 2px solid #e5e7eb; margin-bottom: 16px; }
-        .error-text { color: #dc2626; font-size: 12px; margin-top: 8px; }
-        .loading { text-align: center; padding: 20px; color: #666; }
+        .input-group label { font-size: 11px; font-weight: 600; color: #333; display: block; margin-bottom: 4px; }
+        .input-group input, .input-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .total-display { background: #eff6ff; border: 1px solid #93c5fd; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center; }
+        .total-display p { font-size: 11px; color: #666; }
+        .total-display h3 { font-size: 18px; font-weight: bold; color: #1e40af; }
+        .running-total { background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; margin-bottom: 16px; text-align: center; }
+        .running-total p { font-size: 12px; color: #666; margin-bottom: 4px; }
+        .running-total h2 { font-size: 24px; font-weight: bold; color: #22c55e; }
+        .btn-save { width: 100%; padding: 12px; background: #22c55e; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 8px; }
+        .btn-back { width: 100%; padding: 12px; background: #6b7280; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-add-row { width: 100%; padding: 10px; background: #fef3c7; color: #92400e; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 12px; }
+        .btn-delete { background: #ef4444; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        .error-box { background: #fee2e2; border: 1px solid #fca5a5; padding: 12px; border-radius: 6px; margin-bottom: 16px; color: #dc2626; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -62,125 +66,8 @@
             const [currentUser, setCurrentUser] = React.useState(null);
             const [screen, setScreen] = React.useState('login');
             const [loading, setLoading] = React.useState(false);
-            const [projects, setProjects] = React.useState([]);
-            const [todayTotal, setTodayTotal] = React.useState(0);
             const [rows, setRows] = React.useState([{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
             const [runningTotal, setRunningTotal] = React.useState(0);
+            const [error, setError] = React.useState('');
 
             const callAppScript = async (action, payload = {}) => {
-                try {
-                    setLoading(true);
-                    const response = await fetch(APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action, userEmail: currentUser, ...payload })
-                    });
-                    return await response.json();
-                } catch (error) {
-                    alert('Error: ' + error.message);
-                    return { success: false };
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            React.useEffect(() => {
-                if (currentUser) {
-                    loadData();
-                }
-            }, [currentUser]);
-
-            const loadData = async () => {
-                const res = await callAppScript('getProjects');
-                if (res.success) setProjects(res.reply.projects);
-            };
-
-            const addRow = () => {
-                setRows([...rows, { project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
-            };
-
-            const removeRow = (idx) => {
-                setRows(rows.filter((_, i) => i !== idx));
-            };
-
-            const updateRow = (index, field, value) => {
-                const newRows = [...rows];
-                newRows[index][field] = value;
-                setRows(newRows);
-                calculateTotal(newRows);
-            };
-
-            const calculateTotal = (rowsData) => {
-                let total = 0;
-                rowsData.forEach(row => {
-                    const qty = parseFloat(row.quantity) || 0;
-                    const rate = parseFloat(row.rate) || 0;
-                    const gst = parseFloat(row.gstPercent) || 0;
-                    const amount = qty * rate;
-                    total += amount + (amount * gst / 100);
-                });
-                setRunningTotal(total);
-            };
-
-            const saveExpenses = async () => {
-                const validRows = rows.filter(r => r.project && r.date && r.particular && r.entityName);
-                if (!validRows.length) {
-                    alert('Please fill at least one row');
-                    return;
-                }
-                const result = await callAppScript('addExpenses', { expenses: validRows });
-                if (result.success) {
-                    alert('✓ ' + result.reply.count + ' expenses saved!');
-                    setRows([{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
-                    setRunningTotal(0);
-                    setScreen('home');
-                }
-            };
-
-            if (screen === 'login') {
-                return (
-                    <div className="login-screen">
-                        <div className="login-box">
-                            <h1>Project</h1>
-                            <p>Expense Tracker</p>
-                            <div className="form-group">
-                                <label>Select Your Email</label>
-                                <select onChange={(e) => setCurrentUser(e.target.value)}>
-                                    <option value="">Choose...</option>
-                                    <option value="jdghevariya@gmail.com">Jagdish</option>
-                                    <option value="31.shrikant@gmail.com">Shrikant</option>
-                                    <option value="spprince34@gmail.com">Prince</option>
-                                    <option value="rathodkishan30055@gmail.com">Kishan</option>
-                                    <option value="sarvayogamgroup@gmail.com">Admin</option>
-                                </select>
-                            </div>
-                            <button className="btn" onClick={() => currentUser && setScreen('home')} disabled={!currentUser}>
-                                Login
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-
-            if (screen === 'home') {
-                return (
-                    <div className="home-screen">
-                        <div className="header">
-                            <h1>Project Tracker</h1>
-                            <p>{currentUser.split('@')[0]}</p>
-                        </div>
-                        <div className="content">
-                            <div className="summary">
-                                <p>Today's Expenses</p>
-                                <h2>₹{todayTotal.toLocaleString('en-IN', {maximumFractionDigits: 0})}</h2>
-                            </div>
-                            <button className="menu-btn btn-add" onClick={() => { setScreen('add'); loadData(); }}>
-                                ➕ Add Expense
-                            </button>
-                            <button className="menu-btn btn-view" onClick={() => setScreen('view')}>
-                                👁️ View All
-                            </button>
-                            <button className="menu-btn btn-dashboard" onClick={() => setScreen('dashboard')}>
-                                📊 Dashboard
-                            </button>
-                            <button className="menu-btn btn-export" onClick={() => setScreen('export')}>
-                                ⬇️ Ex
