@@ -1,0 +1,772 @@
+import React, { useState, useEffect } from 'react';
+import { Calendar, Plus, Trash2, Edit2, Download, BarChart3, Filter, Home, LogOut } from 'lucide-react';
+
+export default function SolarExpenseTracker() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [screen, setScreen] = useState('login'); // login, home, add, view, dashboard, export
+  const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // For adding expenses
+  const [rows, setRows] = useState([{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
+  const [runningTotal, setRunningTotal] = useState(0);
+  const [todayTotal, setTodayTotal] = useState(0);
+  
+  // For viewing expenses
+  const [filters, setFilters] = useState({ project: '', entityName: '', particular: '', startDate: '', endDate: '' });
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editingData, setEditingData] = useState({});
+  
+  // Dashboard data
+  const [dashboardData, setDashboardData] = useState(null);
+
+  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_DEPLOYMENT_URL_HERE'; // User will replace this
+  const COMMON_PARTICULARS = ['Panel', 'Inverter', 'Structure', 'Labor', 'Transport', 'Wiring', 'Installation', 'Misc'];
+
+  // ============================================
+  // API Calls to Google Apps Script
+  // ============================================
+
+  const callAppScript = async (action, payload) => {
+    try {
+      setLoading(true);
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: action,
+          userEmail: currentUser,
+          ...payload
+        })
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      alert('Error: ' + error.message);
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load projects and users on startup
+  useEffect(() => {
+    if (currentUser) {
+      loadInitialData();
+    }
+  }, [currentUser]);
+
+  const loadInitialData = async () => {
+    const projectsRes = await callAppScript('getProjects', {});
+    const usersRes = await callAppScript('getUsers', {});
+
+    if (projectsRes.success) {
+      setProjects(projectsRes.reply.projects);
+    }
+    if (usersRes.success) {
+      setUsers(usersRes.reply.users);
+    }
+
+    // Load expenses for today
+    const today = new Date().toISOString().split('T')[0];
+    const expensesRes = await callAppScript('getExpenses', {
+      filters: { startDate: today, endDate: today }
+    });
+    if (expensesRes.success) {
+      setTodayTotal(expensesRes.reply.expenses.reduce((sum, e) => sum + e.total, 0));
+    }
+  };
+
+  // ============================================
+  // ADD EXPENSES LOGIC
+  // ============================================
+
+  const addRow = () => {
+    setRows([...rows, { project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
+  };
+
+  const removeRow = (index) => {
+    setRows(rows.filter((_, i) => i !== index));
+  };
+
+  const updateRow = (index, field, value) => {
+    const newRows = [...rows];
+    newRows[index][field] = value;
+    setRows(newRows);
+    calculateRunningTotal(newRows);
+  };
+
+  const calculateRunningTotal = (rowsData) => {
+    let total = 0;
+    rowsData.forEach(row => {
+      const quantity = parseFloat(row.quantity) || 0;
+      const rate = parseFloat(row.rate) || 0;
+      const gstPercent = parseFloat(row.gstPercent) || 0;
+      const amount = quantity * rate;
+      const gstAmount = (amount * gstPercent) / 100;
+      total += amount + gstAmount;
+    });
+    setRunningTotal(total);
+  };
+
+  const saveExpenses = async () => {
+    // Validate
+    const validRows = rows.filter(row => row.project && row.date && row.particular && row.entityName);
+    if (validRows.length === 0) {
+      alert('Please fill at least one complete expense row');
+      return;
+    }
+
+    const result = await callAppScript('addExpenses', { expenses: validRows });
+    if (result.success) {
+      alert('✓ ' + result.reply.count + ' expenses added successfully!');
+      setRows([{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
+      setRunningTotal(0);
+      setScreen('home');
+      loadInitialData();
+    }
+  };
+
+  // ============================================
+  // VIEW EXPENSES LOGIC
+  // ============================================
+
+  const loadExpenses = async () => {
+    const res = await callAppScript('getExpenses', { filters });
+    if (res.success) {
+      setFilteredExpenses(res.reply.expenses);
+    }
+  };
+
+  const applyFilters = () => {
+    loadExpenses();
+  };
+
+  const startEdit = (expense) => {
+    setEditingId(expense.id);
+    setEditingData({ ...expense });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingData({});
+  };
+
+  const saveEdit = async () => {
+    const result = await callAppScript('editExpense', {
+      id: editingId,
+      updates: editingData
+    });
+    if (result.success) {
+      alert('✓ Expense updated');
+      setEditingId(null);
+      loadExpenses();
+    }
+  };
+
+  // ============================================
+  // DASHBOARD LOGIC
+  // ============================================
+
+  const loadDashboard = async () => {
+    const res = await callAppScript('getDashboard', {});
+    if (res.success) {
+      setDashboardData(res.reply);
+    }
+  };
+
+  // ============================================
+  // EXPORT LOGIC
+  // ============================================
+
+  const exportToExcel = async () => {
+    const res = await callAppScript('exportExpenses', { filters });
+    if (res.success) {
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(res.reply.csv));
+      element.setAttribute('download', 'expenses_' + new Date().toISOString().split('T')[0] + '.csv');
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      alert('✓ Exported to CSV');
+    }
+  };
+
+  // ============================================
+  // LOGIN SCREEN
+  // ============================================
+
+  if (screen === 'login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-full mx-auto flex items-center justify-center">
+                <span className="text-2xl">☀️</span>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-800">Project</h1>
+              <p className="text-sm text-gray-500">Expense Tracker</p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-700">Select Your Email</label>
+              <select
+                onChange={(e) => setCurrentUser(e.target.value)}
+                className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
+              >
+                <option value="">Choose your account...</option>
+                <option value="jdghevariya@gmail.com">Jagdish</option>
+                <option value="31.shrikant@gmail.com">Shrikant</option>
+                <option value="spprince34@gmail.com">Prince</option>
+                <option value="rathodkishan30055@gmail.com">Kishan</option>
+                <option value="sarvayogamgroup@gmail.com">Admin</option>
+              </select>
+            </div>
+
+            <button
+              onClick={() => currentUser && setScreen('home')}
+              disabled={!currentUser}
+              className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-bold py-3 rounded-lg hover:shadow-lg transition disabled:opacity-50"
+            >
+              Login
+            </button>
+
+            <p className="text-xs text-gray-500 text-center">
+              No password needed. Your email identifies you in the system.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // HOME SCREEN (Navigation)
+  // ============================================
+
+  if (screen === 'home') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white p-4 sticky top-0 shadow-md">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold">Project Tracker</h1>
+              <p className="text-sm opacity-90">{currentUser.split('@')[0]}</p>
+            </div>
+            <button
+              onClick={() => {
+                setCurrentUser(null);
+                setScreen('login');
+              }}
+              className="bg-white/20 hover:bg-white/30 p-2 rounded-lg"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Today's Summary */}
+        <div className="p-4 bg-white border-b">
+          <div className="bg-gradient-to-r from-orange-100 to-yellow-100 p-4 rounded-lg">
+            <p className="text-sm text-gray-600">Today's Expenses</p>
+            <p className="text-3xl font-bold text-orange-600">₹{todayTotal.toLocaleString('en-IN', {maximumFractionDigits: 0})}</p>
+          </div>
+        </div>
+
+        {/* Menu Options */}
+        <div className="p-4 space-y-3">
+          <button
+            onClick={() => setScreen('add')}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition"
+          >
+            <Plus size={24} /> Add Expense
+          </button>
+
+          <button
+            onClick={() => {
+              setScreen('view');
+              loadExpenses();
+            }}
+            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition"
+          >
+            <Filter size={24} /> View All
+          </button>
+
+          <button
+            onClick={() => {
+              setScreen('dashboard');
+              loadDashboard();
+            }}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition"
+          >
+            <BarChart3 size={24} /> Dashboard
+          </button>
+
+          <button
+            onClick={() => setScreen('export')}
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition"
+          >
+            <Download size={24} /> Export
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // ADD EXPENSE SCREEN
+  // ============================================
+
+  if (screen === 'add') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 flex items-center justify-between sticky top-0">
+          <h2 className="text-xl font-bold">Add Expenses</h2>
+          <button onClick={() => setScreen('home')} className="bg-white/20 p-2 rounded-lg"><Home size={20} /></button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Quick Buttons */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-600">QUICK ADD:</label>
+            <div className="grid grid-cols-2 gap-2">
+              {COMMON_PARTICULARS.map(item => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    const idx = rows.length - 1;
+                    if (rows[idx].particular === '') {
+                      updateRow(idx, 'particular', item);
+                    }
+                  }}
+                  className="bg-orange-100 text-orange-700 text-xs font-bold py-2 rounded-lg hover:bg-orange-200"
+                >
+                  + {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Running Total */}
+          <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-3 rounded-lg border-2 border-green-300">
+            <p className="text-xs text-gray-600">Running Total</p>
+            <p className="text-2xl font-bold text-green-600">₹{runningTotal.toLocaleString('en-IN', {maximumFractionDigits: 2})}</p>
+          </div>
+
+          {/* Expense Rows */}
+          {rows.map((row, idx) => (
+            <div key={idx} className="bg-white p-4 rounded-lg border-2 border-gray-200 space-y-3">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-gray-800">Expense {idx + 1}</h3>
+                {rows.length > 1 && (
+                  <button onClick={() => removeRow(idx)} className="text-red-500"><Trash2 size={18} /></button>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600">Project *</label>
+                <select
+                  value={row.project}
+                  onChange={(e) => updateRow(idx, 'project', e.target.value)}
+                  className="w-full p-2 border rounded-lg text-sm mt-1"
+                >
+                  <option value="">Select project...</option>
+                  {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600">Date *</label>
+                <input
+                  type="date"
+                  value={row.date}
+                  onChange={(e) => updateRow(idx, 'date', e.target.value)}
+                  className="w-full p-2 border rounded-lg text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600">Particular *</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Inverter, Labor, etc"
+                  value={row.particular}
+                  onChange={(e) => updateRow(idx, 'particular', e.target.value)}
+                  className="w-full p-2 border rounded-lg text-sm mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-600">Unit</label>
+                  <input
+                    type="text"
+                    placeholder="units"
+                    value={row.unit}
+                    onChange={(e) => updateRow(idx, 'unit', e.target.value)}
+                    className="w-full p-2 border rounded-lg text-sm mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600">Qty</label>
+                  <input
+                    type="number"
+                    value={row.quantity}
+                    onChange={(e) => updateRow(idx, 'quantity', e.target.value)}
+                    className="w-full p-2 border rounded-lg text-sm mt-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600">Rate (₹)</label>
+                <input
+                  type="number"
+                  value={row.rate}
+                  onChange={(e) => updateRow(idx, 'rate', e.target.value)}
+                  className="w-full p-2 border rounded-lg text-sm mt-1"
+                />
+              </div>
+
+              <div className="bg-gray-100 p-3 rounded-lg text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Amount:</span>
+                  <span className="font-bold">₹{((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0)).toLocaleString('en-IN', {maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-600">GST %</label>
+                  <select
+                    value={row.gstPercent}
+                    onChange={(e) => updateRow(idx, 'gstPercent', e.target.value)}
+                    className="w-full p-2 border rounded-lg text-sm mt-1"
+                  >
+                    <option value="0">No GST</option>
+                    <option value="5">5%</option>
+                    <option value="18">18%</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600">GST Amt (Auto)</label>
+                  <div className="p-2 bg-gray-100 rounded-lg text-sm mt-1 font-bold">
+                    ₹{(((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0) * (parseFloat(row.gstPercent) || 0)) / 100).toLocaleString('en-IN', {maximumFractionDigits: 2})}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-100 to-cyan-100 p-3 rounded-lg border-2 border-blue-300">
+                <p className="text-xs text-gray-600">Total</p>
+                <p className="text-xl font-bold text-blue-600">
+                  ₹{(((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0)) + (((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0) * (parseFloat(row.gstPercent) || 0)) / 100)).toLocaleString('en-IN', {maximumFractionDigits: 2})}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600">Entity *</label>
+                <select
+                  value={row.entityName}
+                  onChange={(e) => updateRow(idx, 'entityName', e.target.value)}
+                  className="w-full p-2 border rounded-lg text-sm mt-1"
+                >
+                  <option value="">Who is this for?</option>
+                  <option value="Prince">Prince</option>
+                  <option value="Kishan">Kishan</option>
+                  <option value="Jagdish">Jagdish</option>
+                  <option value="Shrikant">Shrikant</option>
+                  <option value="SSPL">SSPL</option>
+                  <option value="SRS">SRS</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600">Notes</label>
+                <input
+                  type="text"
+                  placeholder="Optional notes"
+                  value={row.notes}
+                  onChange={(e) => updateRow(idx, 'notes', e.target.value)}
+                  className="w-full p-2 border rounded-lg text-sm mt-1"
+                />
+              </div>
+            </div>
+          ))}
+
+          {/* Add Row & Save Buttons */}
+          <button
+            onClick={addRow}
+            className="w-full bg-orange-200 text-orange-700 font-bold py-3 rounded-lg hover:bg-orange-300"
+          >
+            + Add Another Row
+          </button>
+
+          <button
+            onClick={saveExpenses}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 rounded-lg hover:shadow-lg transition disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : '✓ Save All'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // VIEW EXPENSES SCREEN
+  // ============================================
+
+  if (screen === 'view') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-4 flex items-center justify-between sticky top-0">
+          <h2 className="text-xl font-bold">All Expenses</h2>
+          <button onClick={() => setScreen('home')} className="bg-white/20 p-2 rounded-lg"><Home size={20} /></button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Filters */}
+          <div className="bg-white p-4 rounded-lg border-2 border-gray-200 space-y-3">
+            <h3 className="font-bold text-gray-800">Filters</h3>
+            
+            <div>
+              <label className="text-xs font-bold text-gray-600">Project</label>
+              <select
+                value={filters.project}
+                onChange={(e) => setFilters({...filters, project: e.target.value})}
+                className="w-full p-2 border rounded-lg text-sm mt-1"
+              >
+                <option value="">All projects</option>
+                {projects.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-600">Entity</label>
+              <select
+                value={filters.entityName}
+                onChange={(e) => setFilters({...filters, entityName: e.target.value})}
+                className="w-full p-2 border rounded-lg text-sm mt-1"
+              >
+                <option value="">All entities</option>
+                <option value="Prince">Prince</option>
+                <option value="Kishan">Kishan</option>
+                <option value="Jagdish">Jagdish</option>
+                <option value="Shrikant">Shrikant</option>
+                <option value="SSPL">SSPL</option>
+                <option value="SRS">SRS</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-600">Date Range</label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                  className="p-2 border rounded-lg text-sm"
+                />
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                  className="p-2 border rounded-lg text-sm"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={applyFilters}
+              className="w-full bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600"
+            >
+              Apply Filters
+            </button>
+          </div>
+
+          {/* Expenses List */}
+          {filteredExpenses.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No expenses found</div>
+          ) : (
+            <div className="space-y-3">
+              {filteredExpenses.map(expense => (
+                <div key={expense.id} className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                  {editingId === expense.id ? (
+                    // Edit Mode
+                    <div className="space-y-2">
+                      <input
+                        type="date"
+                        value={editingData.date}
+                        onChange={(e) => setEditingData({...editingData, date: e.target.value})}
+                        className="w-full p-2 border rounded-lg text-sm"
+                      />
+                      <input
+                        value={editingData.particular}
+                        onChange={(e) => setEditingData({...editingData, particular: e.target.value})}
+                        className="w-full p-2 border rounded-lg text-sm"
+                      />
+                      <input
+                        type="number"
+                        value={editingData.rate}
+                        onChange={(e) => setEditingData({...editingData, rate: parseFloat(e.target.value)})}
+                        className="w-full p-2 border rounded-lg text-sm"
+                      />
+                      <select
+                        value={editingData.gstPercent}
+                        onChange={(e) => setEditingData({...editingData, gstPercent: parseFloat(e.target.value)})}
+                        className="w-full p-2 border rounded-lg text-sm"
+                      >
+                        <option value="0">No GST</option>
+                        <option value="5">5%</option>
+                        <option value="18">18%</option>
+                      </select>
+                      <div className="flex gap-2">
+                        <button onClick={saveEdit} className="flex-1 bg-green-500 text-white font-bold py-2 rounded-lg">Save</button>
+                        <button onClick={cancelEdit} className="flex-1 bg-gray-400 text-white font-bold py-2 rounded-lg">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    // View Mode
+                    <div>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-bold text-gray-800">{expense.particular}</p>
+                          <p className="text-xs text-gray-500">{expense.project}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg text-blue-600">₹{expense.total.toLocaleString('en-IN', {maximumFractionDigits: 2})}</p>
+                          <p className="text-xs text-gray-500">{expense.date}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2">Entity: {expense.entityName} | Added by: {expense.enteredBy.split('@')[0]}</p>
+                      <button
+                        onClick={() => startEdit(expense)}
+                        className="w-full bg-orange-100 text-orange-700 text-sm font-bold py-1 rounded-lg flex items-center justify-center gap-1"
+                      >
+                        <Edit2 size={16} /> Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // DASHBOARD SCREEN
+  // ============================================
+
+  if (screen === 'dashboard') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 flex items-center justify-between sticky top-0">
+          <h2 className="text-xl font-bold">Dashboard</h2>
+          <button onClick={() => setScreen('home')} className="bg-white/20 p-2 rounded-lg"><Home size={20} /></button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {!dashboardData ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : (
+            <>
+              {/* Total */}
+              <div className="bg-gradient-to-br from-purple-100 to-pink-100 p-4 rounded-lg border-2 border-purple-300">
+                <p className="text-sm text-gray-600">Total Expenses</p>
+                <p className="text-3xl font-bold text-purple-600">₹{dashboardData.totalExpenses.toLocaleString('en-IN', {maximumFractionDigits: 0})}</p>
+                <p className="text-xs text-gray-600 mt-1">{dashboardData.totalCount} entries</p>
+              </div>
+
+              {/* By Project */}
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                <h3 className="font-bold text-gray-800 mb-3">By Project</h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {Object.entries(dashboardData.projectTotals).map(([project, total]) => (
+                    <div key={project} className="flex justify-between text-sm">
+                      <span className="text-gray-600">{project}</span>
+                      <span className="font-bold">₹{total.toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* By Entity */}
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                <h3 className="font-bold text-gray-800 mb-3">By Entity/Person</h3>
+                <div className="space-y-2">
+                  {Object.entries(dashboardData.entityTotals).map(([entity, total]) => (
+                    <div key={entity} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                      <span className="text-gray-600">{entity}</span>
+                      <span className="font-bold text-blue-600">₹{total.toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Monthly Trends */}
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                <h3 className="font-bold text-gray-800 mb-3">Monthly Trends</h3>
+                <div className="space-y-2">
+                  {Object.entries(dashboardData.monthlyTotals).map(([month, total]) => (
+                    <div key={month} className="flex justify-between text-sm">
+                      <span className="text-gray-600">{month}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 bg-gray-200 rounded-full h-2" style={{width: '32px', background: 'linear-gradient(to right, #ff6b6b, #ffa500)'}}></div>
+                        <span className="font-bold">₹{total.toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // EXPORT SCREEN
+  // ============================================
+
+  if (screen === 'export') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-4 flex items-center justify-between sticky top-0">
+          <h2 className="text-xl font-bold">Export</h2>
+          <button onClick={() => setScreen('home')} className="bg-white/20 p-2 rounded-lg"><Home size={20} /></button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="bg-white p-6 rounded-lg border-2 border-gray-200 space-y-4">
+            <h3 className="font-bold text-gray-800">Export Options</h3>
+            <p className="text-sm text-gray-600">Download all expenses as a spreadsheet file</p>
+            
+            <button
+              onClick={exportToExcel}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-3 rounded-lg hover:shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Download size={20} /> Export to Excel (CSV)
+            </button>
+
+            <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-gray-700">
+              <p className="font-bold text-blue-900">✓ Tip</p>
+              <p>This file can be opened in Excel, Google Sheets, or any spreadsheet app</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
