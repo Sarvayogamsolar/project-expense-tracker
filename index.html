@@ -1,126 +1,118 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Expense Tracker</title>
+    <title>Expense Tracker</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: white; }
-        .hidden { display: none; }
+        body { font-family: Arial, sans-serif; background: white; }
+        .hidden { display: none !important; }
         
-        .login-screen { min-height: 100vh; background: white; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
-        .login-box h1 { font-size: 32px; font-weight: bold; color: #f97316; margin-bottom: 4px; }
-        .login-box p { font-size: 14px; color: #888; margin-bottom: 30px; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { font-size: 12px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
-        .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        .btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #f97316, #fbbf24); color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .screen { display: none; min-height: 100vh; padding: 20px; }
+        .screen.active { display: block; }
         
-        .home-screen { background: white; min-height: 100vh; }
-        .header { background: linear-gradient(135deg, #f97316, #fbbf24); color: white; padding: 20px; text-align: center; }
-        .header h1 { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+        .login { display: flex; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; max-width: 350px; }
+        .login-box h1 { color: #f97316; font-size: 28px; margin-bottom: 8px; }
+        .login-box p { color: #888; font-size: 13px; margin-bottom: 24px; }
         
-        .content { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .menu-btn { width: 100%; padding: 14px; margin-bottom: 8px; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; }
+        button { background: linear-gradient(135deg, #f97316, #fbbf24); color: white; border: none; cursor: pointer; font-weight: 600; }
+        button:hover { opacity: 0.9; }
+        
+        .header { background: linear-gradient(135deg, #f97316, #fbbf24); color: white; padding: 16px; text-align: center; margin: -20px -20px 20px -20px; }
+        .header h1 { font-size: 22px; margin: 0; }
+        
+        .btn-group { margin-top: 20px; }
+        .btn-menu { width: 100%; padding: 14px; margin: 8px 0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
         .btn-add { background: linear-gradient(135deg, #22c55e, #10b981); }
         .btn-view { background: linear-gradient(135deg, #3b82f6, #0ea5e9); }
-        .btn-dashboard { background: linear-gradient(135deg, #a855f7, #ec4899); }
-        .btn-export { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
         .btn-logout { background: #ef4444; }
         
-        .add-screen { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .row-box { background: white; padding: 16px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 16px; }
-        .row-title { font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; }
-        .input-group { margin-bottom: 12px; }
-        .input-group label { font-size: 11px; font-weight: 600; color: #333; display: block; margin-bottom: 4px; }
-        .input-group input, .input-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .running-total { background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; margin-bottom: 16px; text-align: center; }
-        .running-total h2 { font-size: 24px; font-weight: bold; color: #22c55e; }
-        .btn-save { width: 100%; padding: 12px; background: #22c55e; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 8px; }
-        .btn-back { width: 100%; padding: 12px; background: #6b7280; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
-        .btn-add-row { width: 100%; padding: 10px; background: #fef3c7; color: #92400e; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 12px; }
-        .btn-delete { background: #ef4444; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        .row { background: #f9fafb; padding: 12px; border-radius: 6px; margin: 12px 0; border: 1px solid #e5e7eb; }
+        .row-title { font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        
+        .total-box { background: #f0fdf4; border: 2px solid #22c55e; padding: 12px; border-radius: 6px; text-align: center; margin: 16px 0; }
+        .total-box h2 { color: #22c55e; font-size: 20px; }
+        
+        .list-item { background: #f9fafb; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #f97316; }
+        .list-item p { font-size: 12px; color: #666; margin: 4px 0; }
+        
         .success { background: #d1fae5; color: #065f46; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
     </style>
 </head>
 <body>
-    <div id="login" class="login-screen">
+
+    <!-- LOGIN SCREEN -->
+    <div class="screen login active" id="loginScreen">
         <div class="login-box">
             <h1>Project</h1>
             <p>Expense Tracker</p>
-            <div class="form-group">
-                <label>Your Email</label>
-                <select id="emailSelect">
-                    <option value="">Select...</option>
-                    <option value="jdghevariya@gmail.com">Jagdish</option>
-                    <option value="31.shrikant@gmail.com">Shrikant</option>
-                    <option value="spprince34@gmail.com">Prince</option>
-                    <option value="rathodkishan30055@gmail.com">Kishan</option>
-                    <option value="sarvayogamgroup@gmail.com">Admin</option>
-                </select>
-            </div>
-            <button class="btn" id="loginBtn">Login</button>
+            <select id="userEmail" style="margin: 16px 0;">
+                <option value="">Select Email...</option>
+                <option value="jdghevariya@gmail.com">Jagdish</option>
+                <option value="31.shrikant@gmail.com">Shrikant</option>
+                <option value="spprince34@gmail.com">Prince</option>
+                <option value="rathodkishan30055@gmail.com">Kishan</option>
+                <option value="sarvayogamgroup@gmail.com">Admin</option>
+            </select>
+            <button onclick="doLogin()">Login</button>
         </div>
     </div>
 
-    <div id="home" class="home-screen hidden">
+    <!-- HOME SCREEN -->
+    <div class="screen" id="homeScreen">
         <div class="header">
             <h1>Expense Tracker</h1>
-            <p id="userName"></p>
+            <p id="userName" style="margin: 4px 0; font-size: 12px;"></p>
         </div>
-        <div class="content">
-            <button class="menu-btn btn-add" onclick="showScreen('add')">➕ Add Expense</button>
-            <button class="menu-btn btn-view" onclick="showScreen('view')">👁️ View All</button>
-            <button class="menu-btn btn-logout" onclick="logout()">🚪 Logout</button>
+        <div style="max-width: 500px; margin: 0 auto;">
+            <button class="btn-menu btn-add" onclick="showScreen('addScreen')">➕ Add Expense</button>
+            <button class="btn-menu btn-view" onclick="showScreen('viewScreen')">👁️ View All</button>
+            <button class="btn-menu btn-logout" onclick="doLogout()">🚪 Logout</button>
         </div>
     </div>
 
-    <div id="add" class="home-screen hidden">
-        <div class="header">
-            <h1>Add Expense</h1>
-        </div>
-        <div class="add-screen">
+    <!-- ADD SCREEN -->
+    <div class="screen" id="addScreen">
+        <div class="header"><h1>Add Expense</h1></div>
+        <div style="max-width: 500px; margin: 0 auto;">
             <div id="successMsg"></div>
-            <div class="running-total">
-                <p>Running Total</p>
-                <h2 id="runningTotal">₹0</h2>
+            <div class="total-box">
+                <p style="margin: 0; font-size: 12px; color: #666;">Running Total</p>
+                <h2 id="runningTotal" style="margin: 0;">₹0</h2>
             </div>
-            <div id="expenseRows"></div>
-            <button class="btn-add-row" onclick="addRow()">+ Add Row</button>
-            <button class="btn-save" onclick="saveExpenses()">✓ Save All</button>
-            <button class="btn-back" onclick="showScreen('home')">Back</button>
+            <div id="rowsContainer"></div>
+            <button onclick="addNewRow()" style="background: #fef3c7; color: #92400e; margin-top: 12px;">+ Add Row</button>
+            <button onclick="saveAllExpenses()" style="background: #22c55e; margin-top: 8px;">✓ Save All</button>
+            <button onclick="showScreen('homeScreen')" style="background: #6b7280;">Back</button>
         </div>
     </div>
 
-    <div id="view" class="home-screen hidden">
+    <!-- VIEW SCREEN -->
+    <div class="screen" id="viewScreen">
         <div class="header"><h1>All Expenses</h1></div>
-        <div class="content">
+        <div style="max-width: 500px; margin: 0 auto;">
             <div id="expensesList"></div>
-            <button class="btn-back" onclick="showScreen('home')">Back</button>
+            <button onclick="showScreen('homeScreen')" style="background: #6b7280; margin-top: 16px;">Back</button>
         </div>
     </div>
 
     <script>
         let currentUser = null;
         let expenses = [];
+        let rowCount = 0;
 
-        function showScreen(screen) {
-            document.querySelectorAll('.home-screen').forEach(el => el.classList.add('hidden'));
-            document.getElementById(screen).classList.remove('hidden');
-            if (screen === 'view') loadExpensesView();
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId === 'viewScreen') showExpenses();
+            if (screenId === 'addScreen') renderRows();
         }
 
-        function logout() {
-            currentUser = null;
-            showScreen('login');
-            document.getElementById('emailSelect').value = '';
-        }
-
-        document.getElementById('loginBtn').onclick = function() {
-            const email = document.getElementById('emailSelect').value;
+        function doLogin() {
+            const email = document.getElementById('userEmail').value;
             if (!email) {
                 alert('Please select an email');
                 return;
@@ -128,170 +120,150 @@
             currentUser = email;
             document.getElementById('userName').textContent = email.split('@')[0];
             loadExpenses();
-            renderExpenseRows();
-            showScreen('home');
-        };
+            showScreen('homeScreen');
+        }
+
+        function doLogout() {
+            currentUser = null;
+            expenses = [];
+            document.getElementById('userEmail').value = '';
+            showScreen('loginScreen');
+        }
 
         function loadExpenses() {
-            const stored = localStorage.getItem('expenses');
-            expenses = stored ? JSON.parse(stored) : [];
+            const data = localStorage.getItem('expenseData');
+            expenses = data ? JSON.parse(data) : [];
         }
 
-        function addRow() {
-            expenses.push({ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '', addedBy: currentUser });
-            renderExpenseRows();
+        function addNewRow() {
+            expenses.push({
+                id: rowCount++,
+                project: '',
+                date: '',
+                particular: '',
+                unit: '',
+                qty: 1,
+                rate: 0,
+                gst: 0,
+                entity: '',
+                notes: ''
+            });
+            renderRows();
         }
 
-        function removeRow(idx) {
-            expenses.splice(idx, 1);
-            renderExpenseRows();
+        function deleteRow(id) {
+            expenses = expenses.filter(r => r.id !== id);
+            renderRows();
         }
 
-        function updateRow(idx, field, value) {
-            expenses[idx][field] = value;
-            calculateTotal();
-            renderExpenseRows();
+        function updateField(id, field, value) {
+            const row = expenses.find(r => r.id === id);
+            if (row) row[field] = value;
+            renderRows();
         }
 
-        function renderExpenseRows() {
-            const container = document.getElementById('expenseRows');
+        function renderRows() {
+            const container = document.getElementById('rowsContainer');
             container.innerHTML = '';
-            const tempExpenses = expenses.filter(e => !e.project || !e.date || !e.particular || !e.entityName) || [{}];
-            
-            tempExpenses.forEach((row, idx) => {
-                const qty = parseFloat(row.quantity) || 0;
+
+            if (!expenses.length) {
+                addNewRow();
+                return;
+            }
+
+            let total = 0;
+
+            expenses.forEach(row => {
+                const qty = parseFloat(row.qty) || 0;
                 const rate = parseFloat(row.rate) || 0;
-                const gst = parseFloat(row.gstPercent) || 0;
+                const gst = parseFloat(row.gst) || 0;
                 const amount = qty * rate;
                 const gstAmount = (amount * gst) / 100;
-                const total = amount + gstAmount;
+                const rowTotal = amount + gstAmount;
+                total += rowTotal;
 
                 const html = `
-                    <div class="row-box">
+                    <div class="row">
                         <div class="row-title">
-                            <span>Expense ${idx + 1}</span>
+                            <span>Expense ${expenses.indexOf(row) + 1}</span>
+                            ${expenses.length > 1 ? `<button onclick="deleteRow(${row.id})" style="width: auto; background: #ef4444; padding: 4px 8px; font-size: 12px;">Delete</button>` : ''}
                         </div>
-                        <div class="input-group">
-                            <label>Project *</label>
-                            <input type="text" placeholder="e.g., Surat_Residential_001" value="${row.project || ''}" onchange="updateRow(${idx}, 'project', this.value)" />
+                        <input type="text" placeholder="Project (e.g., Surat_001)" value="${row.project}" onchange="updateField(${row.id}, 'project', this.value)">
+                        <input type="date" value="${row.date}" onchange="updateField(${row.id}, 'date', this.value)">
+                        <input type="text" placeholder="Particular (Panel, Labor, etc)" value="${row.particular}" onchange="updateField(${row.id}, 'particular', this.value)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <input type="text" placeholder="Unit" value="${row.unit}" onchange="updateField(${row.id}, 'unit', this.value)">
+                            <input type="number" placeholder="Qty" value="${row.qty}" onchange="updateField(${row.id}, 'qty', this.value)">
                         </div>
-                        <div class="grid-2">
-                            <div class="input-group">
-                                <label>Date *</label>
-                                <input type="date" value="${row.date || ''}" onchange="updateRow(${idx}, 'date', this.value)" />
-                            </div>
-                            <div class="input-group">
-                                <label>Entity *</label>
-                                <select onchange="updateRow(${idx}, 'entityName', this.value)">
-                                    <option value="">Select</option>
-                                    <option ${row.entityName === 'Prince' ? 'selected' : ''}>Prince</option>
-                                    <option ${row.entityName === 'Kishan' ? 'selected' : ''}>Kishan</option>
-                                    <option ${row.entityName === 'Jagdish' ? 'selected' : ''}>Jagdish</option>
-                                    <option ${row.entityName === 'Shrikant' ? 'selected' : ''}>Shrikant</option>
-                                    <option ${row.entityName === 'SSPL' ? 'selected' : ''}>SSPL</option>
-                                    <option ${row.entityName === 'SRS' ? 'selected' : ''}>SRS</option>
-                                </select>
-                            </div>
+                        <input type="number" placeholder="Rate (₹)" value="${row.rate}" onchange="updateField(${row.id}, 'rate', this.value)">
+                        <div style="background: #eff6ff; padding: 8px; border-radius: 4px; text-align: center; font-size: 13px;">
+                            <p style="margin: 0; color: #666; font-size: 11px;">Amount: <strong style="color: #1e40af;">₹${amount.toLocaleString('en-IN')}</strong></p>
                         </div>
-                        <div class="input-group">
-                            <label>Particular *</label>
-                            <input type="text" placeholder="Panel, Labor, etc" value="${row.particular || ''}" onchange="updateRow(${idx}, 'particular', this.value)" />
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <select onchange="updateField(${row.id}, 'gst', this.value)">
+                                <option value="0" ${row.gst == 0 ? 'selected' : ''}>GST: 0%</option>
+                                <option value="5" ${row.gst == 5 ? 'selected' : ''}>GST: 5%</option>
+                                <option value="18" ${row.gst == 18 ? 'selected' : ''}>GST: 18%</option>
+                            </select>
+                            <select onchange="updateField(${row.id}, 'entity', this.value)">
+                                <option value="">Entity</option>
+                                <option ${row.entity === 'Prince' ? 'selected' : ''}>Prince</option>
+                                <option ${row.entity === 'Kishan' ? 'selected' : ''}>Kishan</option>
+                                <option ${row.entity === 'Jagdish' ? 'selected' : ''}>Jagdish</option>
+                                <option ${row.entity === 'Shrikant' ? 'selected' : ''}>Shrikant</option>
+                                <option ${row.entity === 'SSPL' ? 'selected' : ''}>SSPL</option>
+                                <option ${row.entity === 'SRS' ? 'selected' : ''}>SRS</option>
+                            </select>
                         </div>
-                        <div class="grid-2">
-                            <div class="input-group">
-                                <label>Unit</label>
-                                <input type="text" placeholder="units" value="${row.unit || ''}" onchange="updateRow(${idx}, 'unit', this.value)" />
-                            </div>
-                            <div class="input-group">
-                                <label>Quantity</label>
-                                <input type="number" value="${row.quantity || 1}" onchange="updateRow(${idx}, 'quantity', this.value)" />
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label>Rate (₹)</label>
-                            <input type="number" value="${row.rate || 0}" onchange="updateRow(${idx}, 'rate', this.value)" />
-                        </div>
-                        <div style="background: #eff6ff; border: 1px solid #93c5fd; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
-                            <p style="font-size: 11px; color: #666;">Amount</p>
-                            <h3 style="font-size: 18px; font-weight: bold; color: #1e40af;">₹${amount.toLocaleString('en-IN')}</h3>
-                        </div>
-                        <div class="grid-2">
-                            <div class="input-group">
-                                <label>GST %</label>
-                                <select onchange="updateRow(${idx}, 'gstPercent', this.value)">
-                                    <option ${row.gstPercent === 0 ? 'selected' : ''}>0</option>
-                                    <option ${row.gstPercent === 5 ? 'selected' : ''}>5</option>
-                                    <option ${row.gstPercent === 18 ? 'selected' : ''}>18</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Notes</label>
-                                <input type="text" placeholder="Optional" value="${row.notes || ''}" onchange="updateRow(${idx}, 'notes', this.value)" />
-                            </div>
-                        </div>
-                        <div style="background: #dbeafe; border: 1px solid #0284c7; padding: 12px; border-radius: 6px; text-align: center;">
-                            <p style="font-size: 11px; color: #666;">Total</p>
-                            <h3 style="font-size: 18px; font-weight: bold; color: #1e40af;">₹${total.toLocaleString('en-IN')}</h3>
-                        </div>
+                        <input type="text" placeholder="Notes (optional)" value="${row.notes}" onchange="updateField(${row.id}, 'notes', this.value)">
                     </div>
                 `;
                 container.innerHTML += html;
             });
-        }
 
-        function calculateTotal() {
-            let total = 0;
-            expenses.forEach(row => {
-                const qty = parseFloat(row.quantity) || 0;
-                const rate = parseFloat(row.rate) || 0;
-                const gst = parseFloat(row.gstPercent) || 0;
-                const amount = qty * rate;
-                total += amount + (amount * gst / 100);
-            });
             document.getElementById('runningTotal').textContent = '₹' + total.toLocaleString('en-IN', {maximumFractionDigits: 2});
         }
 
-        function saveExpenses() {
-            const valid = expenses.filter(r => r.project && r.date && r.particular && r.entityName);
+        function saveAllExpenses() {
+            const valid = expenses.filter(r => r.project && r.date && r.particular && r.entity);
             if (!valid.length) {
-                alert('Please fill: Project, Date, Particular, Entity');
+                alert('Fill: Project, Date, Particular, Entity for each row');
                 return;
             }
-            
-            localStorage.setItem('expenses', JSON.stringify(expenses));
+            localStorage.setItem('expenseData', JSON.stringify(expenses));
             document.getElementById('successMsg').innerHTML = '<div class="success">✓ Saved ' + valid.length + ' expense(s)!</div>';
             setTimeout(() => {
-                expenses = [{}];
-                renderExpenseRows();
-                calculateTotal();
+                expenses = [];
+                rowCount = 0;
                 document.getElementById('successMsg').innerHTML = '';
+                renderRows();
             }, 2000);
         }
 
-        function loadExpensesView() {
-            const container = document.getElementById('expensesList');
-            container.innerHTML = '';
+        function showExpenses() {
+            const list = document.getElementById('expensesList');
+            list.innerHTML = '';
             if (!expenses.length) {
-                container.innerHTML = '<p style="text-align: center; color: #999;">No expenses yet</p>';
+                list.innerHTML = '<p style="text-align: center; color: #999;">No expenses saved</p>';
                 return;
             }
             expenses.forEach(exp => {
-                const total = (parseFloat(exp.quantity) * parseFloat(exp.rate)) + ((parseFloat(exp.quantity) * parseFloat(exp.rate) * parseFloat(exp.gstPercent)) / 100);
-                const html = `
-                    <div style="background: white; padding: 16px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                const total = (parseFloat(exp.qty) * parseFloat(exp.rate)) + ((parseFloat(exp.qty) * parseFloat(exp.rate) * parseFloat(exp.gst)) / 100);
+                list.innerHTML += `
+                    <div class="list-item">
+                        <div style="display: flex; justify-content: space-between;">
                             <strong>${exp.particular}</strong>
                             <strong style="color: #22c55e;">₹${total.toLocaleString('en-IN')}</strong>
                         </div>
-                        <p style="font-size: 12px; color: #666;">Project: ${exp.project} | Date: ${exp.date} | Entity: ${exp.entityName}</p>
+                        <p>${exp.project} | ${exp.date} | ${exp.entity}</p>
                     </div>
                 `;
-                container.innerHTML += html;
             });
         }
 
+        // Initialize
         loadExpenses();
-        renderExpenseRows();
     </script>
+
 </body>
 </html>
