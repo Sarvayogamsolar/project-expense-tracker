@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Expense Tracker</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; }
+        .login-screen { min-height: 100vh; background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%); display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 400px; }
+        .login-box h1 { font-size: 28px; margin-bottom: 8px; color: #1f2937; }
+        .login-box p { font-size: 14px; color: #999; margin-bottom: 24px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { font-size: 12px; font-weight: bold; color: #374151; display: block; margin-bottom: 8px; }
+        .form-group select { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+        .btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%); color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .home-screen { min-height: 100vh; background: #f3f4f6; }
+        .header { background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%); color: white; padding: 20px; }
+        .header h1 { font-size: 24px; margin-bottom: 4px; }
+        .header p { font-size: 12px; opacity: 0.9; }
+        .content { padding: 20px; }
+        .summary { background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(16,185,129,0.1)); border: 2px solid #86efac; padding: 16px; border-radius: 12px; margin-bottom: 20px; }
+        .summary p { font-size: 12px; color: #666; margin-bottom: 4px; }
+        .summary h2 { font-size: 28px; font-weight: bold; color: #22c55e; }
+        .menu-btn { width: 100%; padding: 16px; margin-bottom: 12px; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-add { background: linear-gradient(135deg, #22c55e 0%, #10b981 100%); }
+        .btn-view { background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%); }
+        .btn-dashboard { background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); }
+        .btn-export { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+        .add-screen, .view-screen, .dashboard-screen { padding: 20px; }
+        .section-title { font-size: 14px; font-weight: bold; color: #374151; margin-bottom: 12px; margin-top: 20px; }
+        .quick-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
+        .quick-btn { background: #fed7aa; color: #92400e; padding: 8px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .row-container { background: white; padding: 16px; border-radius: 8px; border: 2px solid #e5e7eb; margin-bottom: 16px; }
+        .row-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: bold; }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { font-size: 11px; font-weight: bold; color: #4b5563; display: block; margin-bottom: 4px; }
+        .input-group input, .input-group select { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .total-box { background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(6,182,212,0.1)); border: 2px solid #93c5fd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .total-box p { font-size: 11px; color: #666; }
+        .total-box h3 { font-size: 20px; font-weight: bold; color: #1e40af; }
+        .btn-save, .btn-delete { padding: 8px; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #22c55e; color: white; width: 100%; }
+        .btn-delete { background: #ef4444; color: white; }
+        .filter-box { background: white; padding: 16px; border-radius: 8px; border: 2px solid #e5e7eb; margin-bottom: 16px; }
+        .error-text { color: #dc2626; font-size: 12px; margin-top: 8px; }
+        .loading { text-align: center; padding: 20px; color: #666; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/d/AKfycbye7Vc7cU0ImeSZJ1qvquAqVLbD6x8CbzYUeF6XAqAFhb39H2mj8n8WkoYEDcHA0H1g/exec';
+        
+        function App() {
+            const [currentUser, setCurrentUser] = React.useState(null);
+            const [screen, setScreen] = React.useState('login');
+            const [loading, setLoading] = React.useState(false);
+            const [projects, setProjects] = React.useState([]);
+            const [todayTotal, setTodayTotal] = React.useState(0);
+            const [rows, setRows] = React.useState([{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
+            const [runningTotal, setRunningTotal] = React.useState(0);
+
+            const callAppScript = async (action, payload = {}) => {
+                try {
+                    setLoading(true);
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action, userEmail: currentUser, ...payload })
+                    });
+                    return await response.json();
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                    return { success: false };
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            React.useEffect(() => {
+                if (currentUser) {
+                    loadData();
+                }
+            }, [currentUser]);
+
+            const loadData = async () => {
+                const res = await callAppScript('getProjects');
+                if (res.success) setProjects(res.reply.projects);
+            };
+
+            const addRow = () => {
+                setRows([...rows, { project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
+            };
+
+            const updateRow = (index, field, value) => {
+                const newRows = [...rows];
+                newRows[index][field] = value;
+                setRows(newRows);
+                calculateTotal(newRows);
+            };
+
+            const calculateTotal = (rowsData) => {
+                let total = 0;
+                rowsData.forEach(row => {
+                    const qty = parseFloat(row.quantity) || 0;
+                    const rate = parseFloat(row.rate) || 0;
+                    const gst = parseFloat(row.gstPercent) || 0;
+                    const amount = qty * rate;
+                    total += amount + (amount * gst / 100);
+                });
+                setRunningTotal(total);
+            };
+
+            const saveExpenses = async () => {
+                const validRows = rows.filter(r => r.project && r.date && r.particular && r.entityName);
+                if (!validRows.length) {
+                    alert('Please fill at least one row');
+                    return;
+                }
+                const result = await callAppScript('addExpenses', { expenses: validRows });
+                if (result.success) {
+                    alert('✓ ' + result.reply.count + ' expenses saved!');
+                    setRows([{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }]);
+                    setRunningTotal(0);
+                    setScreen('home');
+                }
+            };
+
+            if (screen === 'login') {
+                return (
+                    <div className="login-screen">
+                        <div className="login-box">
+                            <h1>Project</h1>
+                            <p>Expense Tracker</p>
+                            <div className="form-group">
+                                <label>Select Your Email</label>
+                                <select onChange={(e) => setCurrentUser(e.target.value)}>
+                                    <option value="">Choose...</option>
+                                    <option value="jdghevariya@gmail.com">Jagdish</option>
+                                    <option value="31.shrikant@gmail.com">Shrikant</option>
+                                    <option value="spprince34@gmail.com">Prince</option>
+                                    <option value="rathodkishan30055@gmail.com">Kishan</option>
+                                    <option value="sarvayogamgroup@gmail.com">Admin</option>
+                                </select>
+                            </div>
+                            <button className="btn" onClick={() => currentUser && setScreen('home')} disabled={!currentUser}>
+                                Login
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (screen === 'home') {
+                return (
+                    <div className="home-screen">
+                        <div className="header">
+                            <h1>Project Tracker</h1>
+                            <p>{currentUser.split('@')[0]}</p>
+                        </div>
+                        <div className="content">
+                            <div className="summary">
+                                <p>Today's Expenses</p>
+                                <h2>₹{todayTotal.toLocaleString('en-IN', {maximumFractionDigits: 0})}</h2>
+                            </div>
+                            <button className="menu-btn btn-add" onClick={() => { setScreen('add'); loadData(); }}>
+                                ➕ Add Expense
+                            </button>
+                            <button className="menu-btn btn-view" onClick={() => setScreen('view')}>
+                                👁️ View All
+                            </button>
+                            <button className="menu-btn btn-dashboard" onClick={() => setScreen('dashboard')}>
+                                📊 Dashboard
+                            </button>
+                            <button className="menu-btn btn-export" onClick={() => setScreen('export')}>
+                                ⬇️ Export
+                            </button>
+                            <button className="menu-btn" style={{background: '#dc2626'}} onClick={() => { setCurrentUser(null); setScreen('login'); }}>
+                                🚪 Logout
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (screen === 'add') {
+                return (
+                    <div className="home-screen">
+                        <div className="header">
+                            <h1>Add Expenses</h1>
+                        </div>
+                        <div className="add-screen">
+                            <div className="summary" style={{background: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(16,185,129,0.1))', borderColor: '#86efac'}}>
+                                <p>Running Total</p>
+                                <h2 style={{color: '#22c55e'}}>₹{runningTotal.toLocaleString('en-IN', {maximumFractionDigits: 2})}</h2>
+                            </div>
+
+                            {rows.map((row, idx) => (
+                                <div key={idx} className="row-container">
+                                    <div className="row-header">
+                                        <span>Expense {idx + 1}</span>
+                                        {rows.length > 1 && <button className="btn-delete" onClick={() => setRows(rows.filter((_, i) => i !== idx))}>Delete</button>}
+                                    </div>
+                                    
+                                    <div className="input-group">
+                                        <label>Project *</label>
+                                        <select value={row.project} onChange={(e) => updateRow(idx, 'project', e.target.value)}>
+                                            <option value="">Select...</option>
+                                            {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div className="grid-2">
+                                        <div className="input-group">
+                                            <label>Date *</label>
+                                            <input type="date" value={row.date} onChange={(e) => updateRow(idx, 'date', e.target.value)} />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Entity *</label>
+                                            <select value={row.entityName} onChange={(e) => updateRow(idx, 'entityName', e.target.value)}>
+                                                <option value="">Select...</option>
+                                                <option>Prince</option>
+                                                <option>Kishan</option>
+                                                <option>Jagdish</option>
+                                                <option>Shrikant</option>
+                                                <option>SSPL</option>
+                                                <option>SRS</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="input-group">
+                                        <label>Particular *</label>
+                                        <input type="text" placeholder="e.g., Panel, Labor" value={row.particular} onChange={(e) => updateRow(idx, 'particular', e.target.value)} />
+                                    </div>
+
+                                    <div className="grid-2">
+                                        <div className="input-group">
+                                            <label>Unit</label>
+                                            <input type="text" placeholder="units" value={row.unit} onChange={(e) => updateRow(idx, 'unit', e.target.value)} />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Qty</label>
+                                            <input type="number" value={row.quantity} onChange={(e) => updateRow(idx, 'quantity', e.target.value)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="input-group">
+                                        <label>Rate (₹)</label>
+                                        <input type="number" value={row.rate} onChange={(e) => updateRow(idx, 'rate', e.target.value)} />
+                                    </div>
+
+                                    <div className="total-box">
+                                        <p>Amount: ₹{((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0)).toLocaleString('en-IN', {maximumFractionDigits: 2})}</p>
+                                    </div>
+
+                                    <div className="grid-2">
+                                        <div className="input-group">
+                                            <label>GST %</label>
+                                            <select value={row.gstPercent} onChange={(e) => updateRow(idx, 'gstPercent', e.target.value)}>
+                                                <option value="0">No GST</option>
+                                                <option value="5">5%</option>
+                                                <option value="18">18%</option>
+                                            </select>
+                                        </div>
+                                        <div className="input-group">
+                                            <label>GST Amt</label>
+                                            <input type="text" value={(((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0) * (parseFloat(row.gstPercent) || 0)) / 100).toLocaleString('en-IN', {maximumFractionDigits: 2})} disabled style={{background: '#f3f4f6'}} />
+                                        </div>
+                                    </div>
+
+                                    <div className="total-box" style={{background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(6,182,212,0.1))', borderColor: '#93c5fd'}}>
+                                        <p>Total</p>
+                                        <h3>₹{(((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0)) + (((parseFloat(row.quantity) || 0) * (parseFloat(row.rate) || 0) * (parseFloat(row.gstPercent) || 0)) / 100)).toLocaleString('en-IN', {maximumFractionDigits: 2})}</h3>
+                                    </div>
+
+                                    <div className="input-group">
+                                        <label>Notes</label>
+                                        <input type="text" placeholder="Optional notes" value={row.notes} onChange={(e) => updateRow(idx, 'notes', e.target.value)} />
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button className="menu-btn" style={{background: '#fed7aa', color: '#92400e', marginBottom: '12px'}} onClick={addRow}>
+                                + Add Another Row
+                            </button>
+                            <button className="btn-save" onClick={saveExpenses} disabled={loading}>
+                                {loading ? 'Saving...' : '✓ Save All'}
+                            </button>
+                            <button className="menu-btn" style={{background: '#6b7280', marginTop: '12px'}} onClick={() => setScreen('home')}>
+                                Back to Home
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (screen === 'view') {
+                return (
+                    <div className="home-screen">
+                        <div className="header">
+                            <h1>View All</h1>
+                        </div>
+                        <div className="view-screen">
+                            <p className="loading">View screen coming soon...</p>
+                            <button className="menu-btn" style={{background: '#6b7280'}} onClick={() => setScreen('home')}>
+                                Back to Home
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (screen === 'dashboard') {
+                return (
+                    <div className="home-screen">
+                        <div className="header">
+                            <h1>Dashboard</h1>
+                        </div>
+                        <div className="dashboard-screen">
+                            <p className="loading">Dashboard coming soon...</p>
+                            <button className="menu-btn" style={{background: '#6b7280'}} onClick={() => setScreen('home')}>
+                                Back to Home
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (screen === 'export') {
+                return (
+                    <div className="home-screen">
+                        <div className="header">
+                            <h1>Export</h1>
+                        </div>
+                        <div className="view-screen">
+                            <p className="loading">Export coming soon...</p>
+                            <button className="menu-btn" style={{background: '#6b7280'}} onClick={() => setScreen('home')}>
+                                Back to Home
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
