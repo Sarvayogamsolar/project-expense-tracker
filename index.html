@@ -7,10 +7,9 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: white; }
-        .hidden { display: none !important; }
         
-        .screen { display: none; min-height: 100vh; padding: 20px; }
-        .screen.active { display: block; }
+        .screen { display: none !important; min-height: 100vh; padding: 20px; }
+        .screen.show { display: block !important; }
         
         .login { display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; max-width: 350px; }
@@ -24,7 +23,6 @@
         .header { background: linear-gradient(135deg, #f97316, #fbbf24); color: white; padding: 16px; text-align: center; margin: -20px -20px 20px -20px; }
         .header h1 { font-size: 22px; margin: 0; }
         
-        .btn-group { margin-top: 20px; }
         .btn-menu { width: 100%; padding: 14px; margin: 8px 0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; }
         .btn-add { background: linear-gradient(135deg, #22c55e, #10b981); }
         .btn-view { background: linear-gradient(135deg, #3b82f6, #0ea5e9); }
@@ -45,7 +43,7 @@
 <body>
 
     <!-- LOGIN SCREEN -->
-    <div class="screen login active" id="loginScreen">
+    <div class="screen login show" id="loginScreen">
         <div class="login-box">
             <h1>Project</h1>
             <p>Expense Tracker</p>
@@ -68,8 +66,8 @@
             <p id="userName" style="margin: 4px 0; font-size: 12px;"></p>
         </div>
         <div style="max-width: 500px; margin: 0 auto;">
-            <button class="btn-menu btn-add" onclick="showScreen('addScreen')">➕ Add Expense</button>
-            <button class="btn-menu btn-view" onclick="showScreen('viewScreen')">👁️ View All</button>
+            <button class="btn-menu btn-add" onclick="goToAdd()">➕ Add Expense</button>
+            <button class="btn-menu btn-view" onclick="goToView()">👁️ View All</button>
             <button class="btn-menu btn-logout" onclick="doLogout()">🚪 Logout</button>
         </div>
     </div>
@@ -86,7 +84,7 @@
             <div id="rowsContainer"></div>
             <button onclick="addNewRow()" style="background: #fef3c7; color: #92400e; margin-top: 12px;">+ Add Row</button>
             <button onclick="saveAllExpenses()" style="background: #22c55e; margin-top: 8px;">✓ Save All</button>
-            <button onclick="showScreen('homeScreen')" style="background: #6b7280;">Back</button>
+            <button onclick="goToHome()" style="background: #6b7280;">Back</button>
         </div>
     </div>
 
@@ -95,7 +93,7 @@
         <div class="header"><h1>All Expenses</h1></div>
         <div style="max-width: 500px; margin: 0 auto;">
             <div id="expensesList"></div>
-            <button onclick="showScreen('homeScreen')" style="background: #6b7280; margin-top: 16px;">Back</button>
+            <button onclick="goToHome()" style="background: #6b7280; margin-top: 16px;">Back</button>
         </div>
     </div>
 
@@ -104,11 +102,28 @@
         let expenses = [];
         let rowCount = 0;
 
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-            if (screenId === 'viewScreen') showExpenses();
-            if (screenId === 'addScreen') renderRows();
+        function hideAllScreens() {
+            document.getElementById('loginScreen').classList.remove('show');
+            document.getElementById('homeScreen').classList.remove('show');
+            document.getElementById('addScreen').classList.remove('show');
+            document.getElementById('viewScreen').classList.remove('show');
+        }
+
+        function goToHome() {
+            hideAllScreens();
+            document.getElementById('homeScreen').classList.add('show');
+        }
+
+        function goToAdd() {
+            hideAllScreens();
+            document.getElementById('addScreen').classList.add('show');
+            renderRows();
+        }
+
+        function goToView() {
+            hideAllScreens();
+            document.getElementById('viewScreen').classList.add('show');
+            showExpenses();
         }
 
         function doLogin() {
@@ -120,14 +135,15 @@
             currentUser = email;
             document.getElementById('userName').textContent = email.split('@')[0];
             loadExpenses();
-            showScreen('homeScreen');
+            goToHome();
         }
 
         function doLogout() {
             currentUser = null;
             expenses = [];
             document.getElementById('userEmail').value = '';
-            showScreen('loginScreen');
+            hideAllScreens();
+            document.getElementById('loginScreen').classList.add('show');
         }
 
         function loadExpenses() {
@@ -236,7 +252,7 @@
                 expenses = [];
                 rowCount = 0;
                 document.getElementById('successMsg').innerHTML = '';
-                renderRows();
+                goToHome();
             }, 2000);
         }
 
