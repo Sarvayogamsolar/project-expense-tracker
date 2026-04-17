@@ -17,7 +17,6 @@
         .form-group label { font-size: 12px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
         .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
         .btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #f97316, #fbbf24); color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-        .btn:disabled { opacity: 0.6; }
         
         .home-screen { background: white; min-height: 100vh; }
         .header { background: linear-gradient(135deg, #f97316, #fbbf24); color: white; padding: 20px; text-align: center; }
@@ -44,6 +43,7 @@
         .btn-back { width: 100%; padding: 12px; background: #6b7280; color: white; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
         .btn-add-row { width: 100%; padding: 10px; background: #fef3c7; color: #92400e; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 12px; }
         .btn-delete { background: #ef4444; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        .success { background: #d1fae5; color: #065f46; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
     </style>
 </head>
 <body>
@@ -74,8 +74,6 @@
         <div class="content">
             <button class="menu-btn btn-add" onclick="showScreen('add')">➕ Add Expense</button>
             <button class="menu-btn btn-view" onclick="showScreen('view')">👁️ View All</button>
-            <button class="menu-btn btn-dashboard" onclick="showScreen('dashboard')">📊 Dashboard</button>
-            <button class="menu-btn btn-export" onclick="showScreen('export')">⬇️ Export</button>
             <button class="menu-btn btn-logout" onclick="logout()">🚪 Logout</button>
         </div>
     </div>
@@ -85,6 +83,7 @@
             <h1>Add Expense</h1>
         </div>
         <div class="add-screen">
+            <div id="successMsg"></div>
             <div class="running-total">
                 <p>Running Total</p>
                 <h2 id="runningTotal">₹0</h2>
@@ -97,37 +96,27 @@
     </div>
 
     <div id="view" class="home-screen hidden">
-        <div class="header"><h1>View All</h1></div>
-        <div class="content" style="text-align: center; padding-top: 40px; color: #999;">Coming soon...</div>
-        <div class="content" style="padding-top: 20px;"><button class="btn-back" onclick="showScreen('home')">Back</button></div>
-    </div>
-
-    <div id="dashboard" class="home-screen hidden">
-        <div class="header"><h1>Dashboard</h1></div>
-        <div class="content" style="text-align: center; padding-top: 40px; color: #999;">Coming soon...</div>
-        <div class="content" style="padding-top: 20px;"><button class="btn-back" onclick="showScreen('home')">Back</button></div>
-    </div>
-
-    <div id="export" class="home-screen hidden">
-        <div class="header"><h1>Export</h1></div>
-        <div class="content" style="text-align: center; padding-top: 40px; color: #999;">Coming soon...</div>
-        <div class="content" style="padding-top: 20px;"><button class="btn-back" onclick="showScreen('home')">Back</button></div>
+        <div class="header"><h1>All Expenses</h1></div>
+        <div class="content">
+            <div id="expensesList"></div>
+            <button class="btn-back" onclick="showScreen('home')">Back</button>
+        </div>
     </div>
 
     <script>
         let currentUser = null;
         let expenses = [];
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/d/AKfycbye7Vc7cU0ImeSZJ1qvquAqVLbD6x8CbzYUeF6XAqAFhb39H2mj8n8WkoYEDcHA0H1g/exec';
 
         function showScreen(screen) {
-            document.querySelectorAll('[id="login"], [id="home"], [id="add"], [id="view"], [id="dashboard"], [id="export"]').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.home-screen').forEach(el => el.classList.add('hidden'));
             document.getElementById(screen).classList.remove('hidden');
+            if (screen === 'view') loadExpensesView();
         }
 
         function logout() {
             currentUser = null;
-            expenses = [];
             showScreen('login');
+            document.getElementById('emailSelect').value = '';
         }
 
         document.getElementById('loginBtn').onclick = function() {
@@ -138,12 +127,18 @@
             }
             currentUser = email;
             document.getElementById('userName').textContent = email.split('@')[0];
+            loadExpenses();
             renderExpenseRows();
             showScreen('home');
         };
 
+        function loadExpenses() {
+            const stored = localStorage.getItem('expenses');
+            expenses = stored ? JSON.parse(stored) : [];
+        }
+
         function addRow() {
-            expenses.push({ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' });
+            expenses.push({ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '', addedBy: currentUser });
             renderExpenseRows();
         }
 
@@ -161,8 +156,9 @@
         function renderExpenseRows() {
             const container = document.getElementById('expenseRows');
             container.innerHTML = '';
+            const tempExpenses = expenses.filter(e => !e.project || !e.date || !e.particular || !e.entityName) || [{}];
             
-            expenses.forEach((row, idx) => {
+            tempExpenses.forEach((row, idx) => {
                 const qty = parseFloat(row.quantity) || 0;
                 const rate = parseFloat(row.rate) || 0;
                 const gst = parseFloat(row.gstPercent) || 0;
@@ -174,16 +170,15 @@
                     <div class="row-box">
                         <div class="row-title">
                             <span>Expense ${idx + 1}</span>
-                            ${expenses.length > 1 ? `<button class="btn-delete" onclick="removeRow(${idx})">Delete</button>` : ''}
                         </div>
                         <div class="input-group">
                             <label>Project *</label>
-                            <input type="text" placeholder="e.g., Surat_Residential_001" value="${row.project}" onchange="updateRow(${idx}, 'project', this.value)" />
+                            <input type="text" placeholder="e.g., Surat_Residential_001" value="${row.project || ''}" onchange="updateRow(${idx}, 'project', this.value)" />
                         </div>
                         <div class="grid-2">
                             <div class="input-group">
                                 <label>Date *</label>
-                                <input type="date" value="${row.date}" onchange="updateRow(${idx}, 'date', this.value)" />
+                                <input type="date" value="${row.date || ''}" onchange="updateRow(${idx}, 'date', this.value)" />
                             </div>
                             <div class="input-group">
                                 <label>Entity *</label>
@@ -200,21 +195,21 @@
                         </div>
                         <div class="input-group">
                             <label>Particular *</label>
-                            <input type="text" placeholder="Panel, Labor, etc" value="${row.particular}" onchange="updateRow(${idx}, 'particular', this.value)" />
+                            <input type="text" placeholder="Panel, Labor, etc" value="${row.particular || ''}" onchange="updateRow(${idx}, 'particular', this.value)" />
                         </div>
                         <div class="grid-2">
                             <div class="input-group">
                                 <label>Unit</label>
-                                <input type="text" placeholder="units" value="${row.unit}" onchange="updateRow(${idx}, 'unit', this.value)" />
+                                <input type="text" placeholder="units" value="${row.unit || ''}" onchange="updateRow(${idx}, 'unit', this.value)" />
                             </div>
                             <div class="input-group">
                                 <label>Quantity</label>
-                                <input type="number" value="${row.quantity}" onchange="updateRow(${idx}, 'quantity', this.value)" />
+                                <input type="number" value="${row.quantity || 1}" onchange="updateRow(${idx}, 'quantity', this.value)" />
                             </div>
                         </div>
                         <div class="input-group">
                             <label>Rate (₹)</label>
-                            <input type="number" value="${row.rate}" onchange="updateRow(${idx}, 'rate', this.value)" />
+                            <input type="number" value="${row.rate || 0}" onchange="updateRow(${idx}, 'rate', this.value)" />
                         </div>
                         <div style="background: #eff6ff; border: 1px solid #93c5fd; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
                             <p style="font-size: 11px; color: #666;">Amount</p>
@@ -231,8 +226,12 @@
                             </div>
                             <div class="input-group">
                                 <label>Notes</label>
-                                <input type="text" placeholder="Optional" value="${row.notes}" onchange="updateRow(${idx}, 'notes', this.value)" />
+                                <input type="text" placeholder="Optional" value="${row.notes || ''}" onchange="updateRow(${idx}, 'notes', this.value)" />
                             </div>
+                        </div>
+                        <div style="background: #dbeafe; border: 1px solid #0284c7; padding: 12px; border-radius: 6px; text-align: center;">
+                            <p style="font-size: 11px; color: #666;">Total</p>
+                            <h3 style="font-size: 18px; font-weight: bold; color: #1e40af;">₹${total.toLocaleString('en-IN')}</h3>
                         </div>
                     </div>
                 `;
@@ -259,24 +258,39 @@
                 return;
             }
             
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'addExpenses', userEmail: currentUser, expenses: valid })
-            }).then(r => r.json()).then(result => {
-                if (result.success) {
-                    alert('✓ Saved ' + result.reply.count + ' expense(s)!');
-                    expenses = [];
-                    renderExpenseRows();
-                    calculateTotal();
-                    showScreen('home');
-                } else {
-                    alert('Error: ' + result.message);
-                }
-            }).catch(err => alert('Error: ' + err.message));
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            document.getElementById('successMsg').innerHTML = '<div class="success">✓ Saved ' + valid.length + ' expense(s)!</div>';
+            setTimeout(() => {
+                expenses = [{}];
+                renderExpenseRows();
+                calculateTotal();
+                document.getElementById('successMsg').innerHTML = '';
+            }, 2000);
         }
 
-        // Initialize
-        expenses = [{ project: '', date: '', particular: '', unit: '', quantity: 1, rate: 0, gstPercent: 0, entityName: '', notes: '' }];
+        function loadExpensesView() {
+            const container = document.getElementById('expensesList');
+            container.innerHTML = '';
+            if (!expenses.length) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">No expenses yet</p>';
+                return;
+            }
+            expenses.forEach(exp => {
+                const total = (parseFloat(exp.quantity) * parseFloat(exp.rate)) + ((parseFloat(exp.quantity) * parseFloat(exp.rate) * parseFloat(exp.gstPercent)) / 100);
+                const html = `
+                    <div style="background: white; padding: 16px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <strong>${exp.particular}</strong>
+                            <strong style="color: #22c55e;">₹${total.toLocaleString('en-IN')}</strong>
+                        </div>
+                        <p style="font-size: 12px; color: #666;">Project: ${exp.project} | Date: ${exp.date} | Entity: ${exp.entityName}</p>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        loadExpenses();
         renderExpenseRows();
     </script>
 </body>
